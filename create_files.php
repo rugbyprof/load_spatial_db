@@ -27,9 +27,9 @@ class createFiles{
 		$result = $this->Conn->query("SELECT * FROM txok_nodes");
 		if($result){
 			$fp1 = fopen("nodes.csv","w");
-			$fp2 = fopen("nodegrometry.json","w");
+			$fp2 = fopen("nodegeometry.json","w");
 			while ($row = $result->fetch_assoc()){
-				$geometry = $row['geometry'];
+				$geometry = str_replace('"',' ',$row['geometry']);
 				unset($row['geometry']);
 				fwrite($fp1,implode(',',$row)."\n");
 				$json = array("id"=>$row['id'],"geometry"=>$geometry);
@@ -37,6 +37,14 @@ class createFiles{
 			}
 			fclose($fp1);
 			fclose($fp2);
+		}
+		$result = $this->Conn->query("SELECT * FROM txok_edges");
+		if($result){
+			$fp3 = fopen("edges.csv","w");
+			while ($row = $result->fetch_assoc()){
+				fwrite($fp3,implode(",",$row)."\n");
+			}
+			fclose($fp3);
 		}
 	}
 }
