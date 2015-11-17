@@ -27,7 +27,7 @@ class createFiles{
 		$result = $this->Conn->query("SELECT * FROM txok_nodes");
 		if($result){
 			$fp1 = fopen("nodes.csv","w");
-			$fp2 = fopen("nodegrometry.csv","w");
+			$fp2 = fopen("nodegrometry.json","w");
 			while ($row = $result->fetch_assoc()){
 				$geometry = $row['geometry'];
 				unset($row['geometry']);
