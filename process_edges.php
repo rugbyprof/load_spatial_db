@@ -1,9 +1,11 @@
 <?php
 
+//stopped at ma
+
 $servername = "localhost";
 $username = "root";
 $password = "rugger31";
-$db = 'us_roads';
+$db = 'us_roads2';
 
 $process = new processEdges($servername,$username,$password,$db);
 
@@ -26,8 +28,10 @@ class processEdges{
 		$this->States = array();
 		$this->load_states();
 		
-		$this->Error = 0.002;
-		$this->Conn->query("truncate edges");
+		$this->States = array('southwest_states');
+		
+		$this->Error = 0.001;
+		$this->Conn->query("truncate southwest_edges");
 		
 		//$this->createViews();
 		
@@ -39,8 +43,12 @@ class processEdges{
 	
 	function createViews(){
 		foreach($this->States as $state){
-			$query = "CREATE OR REPLACE VIEW {$state} AS SELECT * FROM nodes WHERE state = '{$state}'";
-			$result = $this->Conn->query($query);
+			$query1 = "DROP VIEW {$state}";
+			$query2 = "CREATE OR REPLACE VIEW from_{$state} AS SELECT * FROM nodes WHERE state = '{$state}' and start = '1'";
+			$query3 = "CREATE OR REPLACE VIEW to_{$state} AS SELECT * FROM nodes WHERE state = '{$state}' and start = '0'";
+			$result = $this->Conn->query($query1);
+			$result = $this->Conn->query($query2);
+			$result = $this->Conn->query($query3);
 			
 		}
     }
@@ -62,29 +70,25 @@ class processEdges{
 // WHERE lat BETWEEN {$lat}-0.5 AND {$lat}+0.5
 // AND lon BETWEEN {$lon}-0.5 AND {$lon}+0.5;
 	
-	function findEdges($state){
-		$query = "SELECT * FROM {$state}
-				WHERE contiguous_us = 'Y'
-				AND  start = '0'
-				ORDER BY id asc";
+	function findEdges($table){
+		$query = "SELECT * FROM {$table}";
 				
 		$result = $this->Conn->query($query);
 		
 		if($result){
 			while ($row = $result->fetch_array()){
 			    echo "\n{$row['id']}=>";
-				$endNode = $this->findEndNode($row['id'],$row['lat'],$row['lon'],$state);
+				$endNode = $this->findEndNode($row['id'],$row['end_lat'],$row['end_lon'],$table);
 			}
         }else{
             echo "No result";
         }
     }
     
-    function findEndNode($fromID,$lat,$lon,$state){
-		$query = "SELECT * FROM {$state}
-				  WHERE lat BETWEEN {$lat}-{$this->Error} AND {$lat}+{$this->Error}
-				  AND lon BETWEEN {$lon}-{$this->Error} AND {$lon}+{$this->Error}
-				  AND start = '1'";
+    function findEndNode($fromID,$lat,$lon,$table){
+		$query = "SELECT * FROM {$table}
+				  WHERE start_lat BETWEEN {$lat}-{$this->Error} AND {$lat}+{$this->Error}
+				  AND start_lon BETWEEN {$lon}-{$this->Error} AND {$lon}+{$this->Error}";
 		
 //		$query = "SELECT * FROM spat_nodes WHERE MBRContains(ST_GeomFromText('Polygon(({$lon}-{$this->Error},{$lat}-{$this->Error},{$lon}+{$this->Error},{$lat}+{$this->Error})'),latlon) AND start = '1'";
 
@@ -94,10 +98,22 @@ class processEdges{
 				while ($row = $result->fetch_array()){
 					$toID = $row['id'];
 					echo"$toID ";
-					$query = "INSERT INTO edges VALUES('$fromID','$toID')";
+					$distance = haversineGreatCircleDistance(floatval($lat), floatval($lon), floatval($row['start_lat']), floatval($row['start_lon']));
+					$query = "INSERT INTO southwest_edges VALUES('$fromID','$toID')";
 					$this->Conn->query($query);
 				}
 			}
         }
     }
+}
+
+function haversineGreatCircleDistance($latitudeFrom, $longitudeFrom, $latitudeTo, $longitudeTo, $earthMeanRadius = 3958)
+{
+    $deltaLatitude = deg2rad($latitudeTo - $latitudeFrom);
+    $deltaLongitude = deg2rad($longitudeTo - $longitudeFrom);
+    $a = sin($deltaLatitude / 2) * sin($deltaLatitude / 2) +
+         cos(deg2rad($latitudeFrom)) * cos(deg2rad($latitudeTo)) *
+         sin($deltaLongitude / 2) * sin($deltaLongitude / 2);
+    $c = 2 * atan2(sqrt($a), sqrt(1-$a));
+    return $earthMeanRadius * $c;
 }

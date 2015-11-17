@@ -49,7 +49,8 @@ error_reporting(1);
 $servername = "localhost";
 $username = "root";
 $password = "rugger31";
-$db = 'us_roads';
+$db = 'us_roads2';
+
 
 //SET @v = - 2.5;
 // > SELECT *
@@ -138,7 +139,7 @@ class processJson{
 		}
         
         //$this->Conn->query("truncate nodes");
-        //$this->Conn->query("truncate edge_geometry");
+        $this->Conn->query("truncate edges");
         $this->processDir($this->DirName);
     }
     
@@ -195,17 +196,15 @@ class processJson{
     	
     	$contiguous = $this->Fips->getFipsValue('contiguous',$state);
     	
-    	$startID = $this->getUUID();
-    	$endID = $this->getUUID();
+    	$id = $this->getUUID();
+    	
+    	$distance = $this->calcDistance($obj['linestring']);
+
     		
-		$query1 = "INSERT INTO nodes VALUES ('{$startID}', '{$startLat}', '{$startLon}', '{$rttype}', '{$mftfcc}', '{$fullname}', '{$state}','{$contiguous}' , '1')";
-		$query2 = "INSERT INTO nodes VALUES ('{$endID}', '{$endLat}', '{$endLon}', '{$rttype}', '{$mftfcc}', '{$fullname}', '{$state}', '{$contiguous}' , '0')";
-        $query3 = "INSERT INTO edge_geometry VALUES ('{$startID}','{$endID}','{$geometry}')";
+		$query1 = "INSERT INTO edges VALUES ('{$id}', '{$startLat}', '{$startLon}', '{$endLat}', '{$endLon}','{$rttype}', '{$mftfcc}', '{$fullname}', '{$state}','{$contiguous}' ,'{$distance}','{$geometry}')";
     
         
 		$this->Conn->query($query1);
-		$this->Conn->query($query2);
-		$this->Conn->query($query3);
     }
     
     function getUUID(){
@@ -218,6 +217,14 @@ class processJson{
     	 $parts = explode('_',$filename);
     	 $index = $parts[2] * 1;
     	 return $index;
+    }
+    
+    function calcDistance($points){
+    	$distance = 0;
+    	for($i=0;$i<sizeof($points)-1;$i++){
+    		$distance += haversineGreatCircleDistance($points[$i][1], $points[$i][0], $points[$i+1][1], $points[$i+1][0]);
+    	}
+    	return $distance;
     }
     
     function getObject(){
@@ -272,4 +279,30 @@ class processJson{
         
     }
     
+}
+
+/**
+ * Calculates the great-circle distance between two points, with
+ * the Haversine formula.
+ * @param float $latitudeFrom Latitude of start point in [deg decimal]
+ * @param float $longitudeFrom Longitude of start point in [deg decimal]
+ * @param float $latitudeTo Latitude of target point in [deg decimal]
+ * @param float $longitudeTo Longitude of target point in [deg decimal]
+ * @param float $earthRadius Mean earth radius in [m]
+ * @return float Distance between points in [m] (same as earthRadius)
+ */
+function haversineGreatCircleDistance($latitudeFrom, $longitudeFrom, $latitudeTo, $longitudeTo, $earthRadius = 6371000)
+{
+  // convert from degrees to radians
+  $latFrom = deg2rad($latitudeFrom);
+  $lonFrom = deg2rad($longitudeFrom);
+  $latTo = deg2rad($latitudeTo);
+  $lonTo = deg2rad($longitudeTo);
+
+  $latDelta = $latTo - $latFrom;
+  $lonDelta = $lonTo - $lonFrom;
+
+  $angle = 2 * asin(sqrt(pow(sin($latDelta / 2), 2) +
+    cos($latFrom) * cos($latTo) * pow(sin($lonDelta / 2), 2)));
+  return ($angle * $earthRadius) / 3.28084;   //convert to feet
 }
