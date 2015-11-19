@@ -1,9 +1,27 @@
 import csv
 import json
+import random
+
+"""
+https://www.python.org/doc/essays/graphs/
+"""
 
 nodes = []
 edges = []
 geometry = {}
+graph = dict()
+
+def find_path(graph, start, end, path=[]):
+        path = path + [start]
+        if start == end:
+            return path
+        if not graph.has_key(start):
+            return None
+        for node in graph[start]:
+            if node not in path:
+                newpath = find_path(graph, node, end, path)
+                if newpath: return newpath
+        return None
 
 with open('nodes.csv', 'rb') as csvfile:
     rows = csv.reader(csvfile, delimiter=',', quotechar='"')
@@ -22,9 +40,19 @@ for line in f:
     #print line['id']
     geometry[line['id']] = line['geometry']
 
-print nodes[78]
-#print len(edges)
 
-geo =  json.loads(geometry[str(203982)])
+geo =  json.loads(geometry[str(203980)])
 
-print len(geo)
+for e in edges:
+    A,B = e
+    if A in graph:
+        graph[A].append(B)
+    else:
+        graph[A] = [B]
+
+
+
+start = random.choice(graph.keys())
+end = random.choice(graph.keys())
+
+print find_path(graph, start, end)
