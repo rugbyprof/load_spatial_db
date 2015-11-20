@@ -1,25 +1,26 @@
 #! /usr/bin/python
 import fileinput
+import csv
 
 points = []
 nearest = []
 
 #This represents our node.  Each node has a coordinate and a left and right node
 class Node:
-    def __init__(self, id, coords, left, right, uuid, data):
+    def __init__(self, id, coords, left, right):
         self.id = id
         self.coords = coords
         self.left = left
         self.right = right
-        self.uuid = uuid
-        self.data = data
 
 def prep(file):
     global points
     global nearest
-    for line in fileinput.input(file):
-        info = line.split()
-        points.append((int(info[0]) , float(info[1]) , float(info[2]) ))
+
+    with open(file, 'rb') as csvfile:
+        rows = csv.reader(csvfile, delimiter=',', quotechar='"')
+        for row in rows:
+            points.append([row[1],row[2]])
 
     root = generate(points)
 
@@ -92,8 +93,6 @@ def generate(points, tree_depth = 0):
     median = len(points) / 2
 
     #Set this node to the first value
-
-
     node = Node(points[median][0], points[median][1:3], None, None)
 
     #Generate the left side of the tree.
@@ -116,4 +115,6 @@ def float_compare(x, y):
 
 if __name__ == "__main__":
     import sys
+    if len(sys.argv) < 2:
+        sys.exit()
     prep(sys.argv[1])
