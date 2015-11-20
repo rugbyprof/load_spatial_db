@@ -4,6 +4,7 @@ import random
 
 """
 https://www.python.org/doc/essays/graphs/
+http://theory.stanford.edu/~amitp/GameProgramming/AStarComparison.html
 """
 
 nodes = []
