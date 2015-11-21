@@ -200,10 +200,13 @@ class processJson{
 
     	$distance = $this->calcDistance($obj['linestring']);
 
-      $bearing = $this->calcBearing($obj['linestring']);
+      $avg_bearing = $this->calcBearing($obj['linestring']);
+      $start_bearing = bearing($obj['linestring'][0][1], $obj['linestring'][0][0], $obj['linestring'][1][1], $obj['linestring'][1][0]);
 
-		$query1 = "INSERT INTO road_segments VALUES ('{$id}', '{$startLat}', '{$startLon}', '{$endLat}', '{$endLon}','{$rttype}', '{$mftfcc}', '{$fullname}', '{$state}','{$contiguous}' ,'{$distance}','{$bearing}','{$geometry}')";
+      $length = sizeof($obj['linestring']);
+      $end_bearing = bearing($obj['linestring'][$length-2][1], $obj['linestring'][$length-2][0], $obj['linestring'][$length-1][1], $obj['linestring'][$length-1][0]);
 
+		$query1 = "INSERT INTO road_segments VALUES ('{$id}', '{$startLat}', '{$startLon}', '{$endLat}', '{$endLon}','{$rttype}', '{$mftfcc}', '{$fullname}', '{$state}','{$contiguous}' ,'{$distance}','{$avg_bearing}','{$start_bearing}','{$end_bearing}','{$geometry}')";
 
 		$this->Conn->query($query1);
     }
@@ -221,17 +224,17 @@ class processJson{
     }
 
     function calcDistance($points){
-    	$distance = 0;
-    	for($i=0;$i<sizeof($points)-1;$i++){
-    		$distance += haversineGreatCircleDistance($points[$i][1], $points[$i][0], $points[$i+1][1], $points[$i+1][0]);
-    	}
-    	return $distance;
+    	 $distance = 0;
+    	 for($i=0;$i<sizeof($points)-1;$i++){
+    		 $distance += haversineGreatCircleDistance($points[$i][1], $points[$i][0], $points[$i+1][1], $points[$i+1][0]);
+    	 }
+    	 return $distance;
     }
 
     function calcBearing($points){
     	$bearing = 0;
     	for($i=0;$i<sizeof($points)-1;$i++){
-    		$bearing += bearing($points[$i][1], $points[$i][0], $points[$i+1][1], $points[$i+1][0]);
+    		 $bearing += bearing($points[$i][1], $points[$i][0], $points[$i+1][1], $points[$i+1][0]);
     	}
     	return ($bearing /  sizeof($points)-1);
     }

@@ -118,3 +118,16 @@ if __name__ == "__main__":
     if len(sys.argv) < 2:
         sys.exit()
     prep(sys.argv[1])
+
+    points = []
+    with open(sys.argv[1], 'rb') as csvfile:
+        rows = csv.reader(csvfile, delimiter=',', quotechar='"')
+        for row in rows:
+            #segment = RoadSegment(row[0],row[1],row[2],row[3],row[4],row[5],row[6],row[7],row[8],row[9],row[10],row[11])
+            point = Point(row[0],row[1],row[2])
+            points.append(point)
+    kd = Tree()
+
+    for p in points:
+        kd.add(p)
+    kd.printTree()
