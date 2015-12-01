@@ -5,3 +5,4 @@ temp.out
 road_segments.csv
 road_segments.mssql
 road_segments_w_bearing.mssql
+tl_*
